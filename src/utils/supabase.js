@@ -4,11 +4,22 @@ export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const supabaseClient = async (supabaseAccessToken) => {
+  // Build headers with token if available
+  const headers = {};
+  if (supabaseAccessToken && typeof supabaseAccessToken === "string" && supabaseAccessToken.trim()) {
+    headers.Authorization = `Bearer ${supabaseAccessToken}`;
+  }
+
   const supabase = createClient(supabaseUrl, supabaseKey, {
-    global: { headers: { Authorization: `Bearer ${supabaseAccessToken}` } },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+    global: {
+      headers: headers,
+    },
   });
-  // set Supabase JWT on the client object,
-  // so it is sent up with all Supabase requests
+
   return supabase;
 };
 

@@ -13,9 +13,21 @@ const useFetch = (cb, options = {}) => {
     setError(null);
 
     try {
-      const supabaseAccessToken = await session.getToken({
-        template: "supabase",
-      });
+      let supabaseAccessToken = null;
+      
+      // Try to get Clerk token, but don't fail if it doesn't work
+      if (session) {
+        try {
+          supabaseAccessToken = await session.getToken({
+            template: "supabase",
+          });
+        } catch (tokenError) {
+          console.log("Note: Could not retrieve Supabase token from Clerk:", tokenError);
+          // Continue without the token - the API will use anon key
+          supabaseAccessToken = null;
+        }
+      }
+      
       const response = await cb(supabaseAccessToken, options, ...args);
       setData(response);
       setError(null);

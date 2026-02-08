@@ -1,9 +1,23 @@
-import supabaseClient from "@/utils/supabase";
+import { createClient } from "@supabase/supabase-js";
+
+const anonClient = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+    global: {
+      headers: {},
+    },
+  }
+);
 
 // Fetch Jobs
 export async function getJobs(token, { location, company_id, searchQuery }) {
-  const supabase = await supabaseClient(token);
-  let query = supabase
+  let query = anonClient
     .from("jobs")
     .select("*, saved: saved_jobs(id), company: companies(name,logo_url)");
 
@@ -31,8 +45,7 @@ export async function getJobs(token, { location, company_id, searchQuery }) {
 
 // Read Saved Jobs
 export async function getSavedJobs(token) {
-  const supabase = await supabaseClient(token);
-  const { data, error } = await supabase
+  const { data, error } = await anonClient
     .from("saved_jobs")
     .select("*, job: jobs(*, company: companies(name,logo_url))");
 
@@ -46,8 +59,7 @@ export async function getSavedJobs(token) {
 
 // Read single job
 export async function getSingleJob(token, { job_id }) {
-  const supabase = await supabaseClient(token);
-  let query = supabase
+  let query = anonClient
     .from("jobs")
     .select(
       "*, company: companies(name,logo_url), applications: applications(*)"
@@ -67,11 +79,9 @@ export async function getSingleJob(token, { job_id }) {
 
 // - Add / Remove Saved Job
 export async function saveJob(token, { alreadySaved }, saveData) {
-  const supabase = await supabaseClient(token);
-
   if (alreadySaved) {
     // If the job is already saved, remove it
-    const { data, error: deleteError } = await supabase
+    const { data, error: deleteError } = await anonClient
       .from("saved_jobs")
       .delete()
       .eq("job_id", saveData.job_id);
@@ -84,7 +94,7 @@ export async function saveJob(token, { alreadySaved }, saveData) {
     return data;
   } else {
     // If the job is not saved, add it to saved jobs
-    const { data, error: insertError } = await supabase
+    const { data, error: insertError } = await anonClient
       .from("saved_jobs")
       .insert([saveData])
       .select();
@@ -100,8 +110,7 @@ export async function saveJob(token, { alreadySaved }, saveData) {
 
 // - job isOpen toggle - (recruiter_id = auth.uid())
 export async function updateHiringStatus(token, { job_id }, isOpen) {
-  const supabase = await supabaseClient(token);
-  const { data, error } = await supabase
+  const { data, error } = await anonClient
     .from("jobs")
     .update({ isOpen })
     .eq("id", job_id)
@@ -117,9 +126,7 @@ export async function updateHiringStatus(token, { job_id }, isOpen) {
 
 // get my created jobs
 export async function getMyJobs(token, { recruiter_id }) {
-  const supabase = await supabaseClient(token);
-
-  const { data, error } = await supabase
+  const { data, error } = await anonClient
     .from("jobs")
     .select("*, company: companies(name,logo_url)")
     .eq("recruiter_id", recruiter_id);
@@ -134,9 +141,7 @@ export async function getMyJobs(token, { recruiter_id }) {
 
 // Delete job
 export async function deleteJob(token, { job_id }) {
-  const supabase = await supabaseClient(token);
-
-  const { data, error: deleteError } = await supabase
+  const { data, error: deleteError } = await anonClient
     .from("jobs")
     .delete()
     .eq("id", job_id)
@@ -152,9 +157,7 @@ export async function deleteJob(token, { job_id }) {
 
 // - post job
 export async function addNewJob(token, _, jobData) {
-  const supabase = await supabaseClient(token);
-
-  const { data, error } = await supabase
+  const { data, error } = await anonClient
     .from("jobs")
     .insert([jobData])
     .select();
